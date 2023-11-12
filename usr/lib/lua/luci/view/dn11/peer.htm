@@ -1,0 +1,205 @@
+<%+header%>
+<script>
+    function generatePeerInfo() {
+        var entryPort = document.getElementById("entryPort");
+        if (entryPort.value == "") {
+            checkPort();
+            entryPort.focus();
+            return;
+        }
+        fetch("/cgi-bin/luci/api/genKey")
+            .then(response => response.text())
+            .then(data => {
+                var keyLines = data.split('\n');
+                var privateKey = keyLines[0];
+                var publicKey = keyLines[1];
+                document.getElementById("privateKey").value = privateKey;
+                var peerInfo = publicKey + "\n";
+                peerInfo += document.getElementById("entryDomain").value + ":" + entryPort.value + "\n";
+                peerInfo += "<%= tunnel_ip %>/32\n";
+                peerInfo += "<%= as_number %>\n";
+                document.getElementById("peerInfo").value = peerInfo;
+
+                var copyText = document.getElementById("peerInfo");
+                copyText.select();
+                copyText.setSelectionRange(0, 99999);
+                document.execCommand("copy");
+                copyText.setSelectionRange(0, 0);
+            })
+            .catch(error => console.error('Error:', error));
+    }
+
+    function checkPort() {
+        fetch("/cgi-bin/luci/api/wp")
+            .then(response => response.text())
+            .then(data => {
+                document.getElementById("peerInfo").value = data.trim();
+            })
+            .catch(error => console.error('Error:', error));
+    }
+
+    function generateConfig() {
+        var entryPort = document.getElementById("entryPort").value;
+        var privateKey = document.getElementById("privateKey").value;
+        var nickname = document.getElementById("nickname").value;
+        var publicKey = document.getElementById("publicKey").value;
+        var endpoint = document.getElementById("endpoint").value;
+        var tunnelIp = document.getElementById("tunnelIp").value;
+        var asn = document.getElementById("asn").value;
+        if (entryPort == "" || privateKey == "" || nickname == "" || publicKey == "" || endpoint == "" || tunnelIp == "" || asn == "") {
+            alert("请填写完整信息");
+            return;
+        }
+
+        var wgQuickConfig = `[Interface]
+PrivateKey = ${privateKey}
+ListenPort = ${entryPort}
+PostUp = /sbin/ip addr add dev %i <%= tunnel_ip %>/32 peer ${tunnelIp}/32
+Table = off
+
+[Peer]
+Endpoint = ${endpoint}
+PublicKey = ${publicKey}
+AllowedIPs = 0.0.0.0/0
+`;
+
+        var bgpConfig = `protocol bgp ${nickname} from BGP_peers {
+    neighbor ${tunnelIp}%${nickname} as ${asn};
+}
+
+`;
+
+        document.getElementById("wgConfig").value = wgQuickConfig;
+        document.getElementById("bgpConfig").value = bgpConfig;
+    }
+
+    function applyConfigs() {
+        var nickname = document.getElementById('nickname').value;
+        var wgConfig = document.getElementById('wgConfig').value;
+        var bgpConfig = document.getElementById('bgpConfig').value;
+        if (nickname == "" || wgConfig == "" || bgpConfig == "") {
+            alert("请先生成配置");
+            return;
+        }
+
+        fetch("/cgi-bin/luci/admin/network/dn11/addPeer", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    "nickname": nickname,
+                    "wgConfig": wgConfig,
+                    "bgpConfig": bgpConfig
+                })
+            })
+            .then(response => response.text())
+            .then(data => {
+                console.log(data);
+                alert(data);
+            })
+            .catch(error => console.error('Error:', error));
+    }
+</script>
+
+<form>
+    <div class="flex-container">
+        <div class="flex-item">
+            <label for="entryPort">端口：</label>
+            <input type="text" id="entryPort" style="width: 100%;">
+            <input class="btn cbi-button cbi-button-apply" type="button" value="查看端口情况" onclick="checkPort()">
+        </div>
+    
+        <div class="flex-item">
+            <label for="entryDomain">接入点：</label>
+            <select id="entryDomain" style="width: 100%;">
+                <% for _, domain in ipairs(entry_domain) do %>
+                    <option value="<%= domain %>"><%= domain %></option>
+                <% end %>
+            </select>
+            <input class="btn cbi-button cbi-button-apply" type="button" value="生成 Peer 信息并复制" onclick="generatePeerInfo()">
+        </div>
+        <input type="hidden" id="privateKey">
+    </div>
+
+    <div class="flex-container">
+        <div class="flex-item">
+            <label for="peerInfo">端口情况 / Peer 信息：</label>
+            <textarea id="peerInfo" rows="6" style="width: 100%;" readonly></textarea>
+        </div>
+    </div>
+
+    <div class="flex-container">
+        <div class="flex-item">
+            <label for="nickname">昵称：</label>
+            <input type="text" id="nickname">
+        </div>
+    
+        <div class="flex-item">
+            <label for="endpoint">接入点：</label>
+            <input type="text" id="endpoint">
+        </div>
+    </div>
+
+    <div class="flex-container">
+        <div class="flex-item">
+            <label for="asn">ASN：</label>
+            <input type="text" id="asn">
+        </div>
+    
+        <div class="flex-item">
+            <label for="tunnelIp">隧道 IP：</label>
+            <input type="text" id="tunnelIp">
+        </div>
+    </div>
+
+    <div class="flex-container">
+        <div class="flex-item">
+            <label for="publicKey">公钥：</label>
+            <input type="text" id="publicKey">
+        </div>
+    
+        <div class="flex-item">
+            <input class="btn cbi-button cbi-button-apply" type="button" value="生成配置" onclick="generateConfig()"><br>
+        </div>
+    </div>
+
+    <div class="flex-container">
+        <div class="flex-item">
+            <label for="wgConfig">wg-quick 配置：</label><br>
+            <textarea id="wgConfig" rows="13" style="width: 100%;"></textarea><br>
+        </div>
+    
+        <div class="flex-item">
+            <label for="bgpConfig">BGP 配置：</label><br>
+            <textarea id="bgpConfig" rows="6" style="width: 100%;"></textarea><br>
+            <br>
+            <input class="btn cbi-button cbi-button-apply" type="button"value="应用" onclick="applyConfigs()"><br>
+        </div>
+    </div>
+
+</form>
+<style>
+    .flex-container {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 20px;
+    }
+
+    .flex-item {
+        flex: 1;
+        margin-right: 10px;
+    }
+
+    @media (max-width: 600px) {
+        .flex-container {
+            flex-direction: column;
+            margin-bottom: 0;
+        }
+
+        .flex-item {
+            margin: 10px 0;
+        }
+    }
+</style>
+<%+footer%>

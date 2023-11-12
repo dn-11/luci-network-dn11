@@ -1,0 +1,6 @@
+
+config dn11 'dn11'
+	option as_number '4211110000'
+	list entry_domain 'ddns1.dnspod.cn'
+	option tunnel_ip '192.168.3.62'
+
