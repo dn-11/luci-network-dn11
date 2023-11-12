@@ -8,10 +8,11 @@ opkg install lyaml
 
 文件名啥的自己都看一眼，可能有不一样的
 
-防火墙部分自己调整，目前仅供新版（不用加接口，直接在防火墙加设备的使用）
+防火墙部分自己调整，目前仅供新版（不用加接口，直接在防火墙加设备）的使用
 
-旧版（先加接口，再加防火墙参考如下）
+旧版（先加接口，再加防火墙）参考如下
 
+```lua
     -- Add firewall
 
     local uci = require("luci.model.uci").cursor()
@@ -25,3 +26,4 @@ opkg install lyaml
     network = network .. " " .. nickname
     uci:set("firewall", "vpn", "network", network)
     uci:commit("firewall")
+```
