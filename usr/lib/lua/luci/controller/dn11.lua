@@ -63,6 +63,32 @@ function add_peer()
     local request_body = luci.http.content()
     local data = luci.jsonc.parse(request_body)
 
+    -- check data
+
+    if not data then
+        luci.http.prepare_content("text/plain")
+        luci.http.write("Invalid request")
+        return
+    end
+
+    if not data.nickname then
+        luci.http.prepare_content("text/plain")
+        luci.http.write("Nickname is required")
+        return
+    end
+
+    if not data.wgConfig then
+        luci.http.prepare_content("text/plain")
+        luci.http.write("Wireguard config is required")
+        return
+    end
+
+    if not data.bgpConfig then
+        luci.http.prepare_content("text/plain")
+        luci.http.write("BGP config is required")
+        return
+    end
+
     -- Save wg conf
 
     local nickname = data.nickname
