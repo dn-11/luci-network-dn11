@@ -119,6 +119,7 @@ function add_peer()
         table.insert(device_list, nickname)
         uci:set_list("firewall", vpn_zone, "device", device_list)
         uci:commit("firewall")
+        luci.util.exec("/etc/init.d/firewall restart")
     end
 
     -- Up wg interface
@@ -151,7 +152,7 @@ function add_peer()
     local file = io.open("/etc/wg-quick-op.yaml", "w")
     file:write(updated_contents)
     file:close()
-    luci.util.exec("service wg-quick-op restart")
+    luci.util.exec("/etc/init.d/wg-quick-op restart")
 
     luci.http.prepare_content("text/plain")
     luci.http.write("OK")
