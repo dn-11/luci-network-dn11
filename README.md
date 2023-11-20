@@ -21,9 +21,11 @@ opkg install lyaml
     uci:set("network", new_interface, "ifname", nickname)
     uci:rename("network", new_interface, nickname)
     uci:commit("network")
+    luci.util.exec("/etc/init.d/network restart")
 
     local network = uci:get("firewall", "vpn", "network")
     network = network .. " " .. nickname
     uci:set("firewall", "vpn", "network", network)
     uci:commit("firewall")
+    luci.util.exec("/etc/init.d/firewall restart")
 ```
