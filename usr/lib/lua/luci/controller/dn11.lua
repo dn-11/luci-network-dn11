@@ -119,7 +119,7 @@ function add_peer()
         table.insert(device_list, nickname)
         uci:set_list("firewall", vpn_zone, "device", device_list)
         uci:commit("firewall")
-        luci.util.exec("/etc/init.d/firewall restart")
+        luci.util.exec("/etc/init.d/firewall reload")
     end
 
     -- Up wg interface
