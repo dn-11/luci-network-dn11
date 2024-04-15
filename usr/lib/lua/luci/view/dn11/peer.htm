@@ -51,6 +51,10 @@
             return;
         }
 
+        if (tunnelIp.endsWith("/32")) {
+            tunnelIp = tunnelIp.slice(0, -3);
+        }
+
         var wgQuickConfig = `[Interface]
 PrivateKey = ${privateKey}
 ListenPort = ${entryPort}
