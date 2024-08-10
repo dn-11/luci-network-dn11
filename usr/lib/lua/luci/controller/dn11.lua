@@ -137,23 +137,6 @@ function add_peer()
 
     luci.util.exec("birdc configure")
 
-    -- Add to dn11 config
-
-    local lyaml = require('lyaml')
-    local file = io.open("/etc/wg-quick-op.yaml", "r")
-    local contents = file:read("*a")
-    file:close()
-    local data = lyaml.load(contents)
-    local enabled = data.enabled
-    local ddns = data.ddns
-    table.insert(data.enabled, nickname)
-    table.insert(data.ddns.iface, nickname)
-    local updated_contents = lyaml.dump({data})
-    local file = io.open("/etc/wg-quick-op.yaml", "w")
-    file:write(updated_contents)
-    file:close()
-    luci.util.exec("/etc/init.d/wg-quick-op restart")
-
     luci.http.prepare_content("text/plain")
     luci.http.write("OK")
 end

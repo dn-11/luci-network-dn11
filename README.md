@@ -2,7 +2,7 @@
 
 ## 依赖
 
-opkg install lyaml
+无
 
 ## 注意事项
 
