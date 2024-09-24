@@ -46,19 +46,21 @@
         var endpoint = document.getElementById("endpoint").value;
         var tunnelIp = document.getElementById("tunnelIp").value;
         var asn = document.getElementById("asn").value;
+        var fwmark = document.getElementById("fwmark").value;
         if (entryPort == "" || privateKey == "" || nickname == "" || publicKey == "" || endpoint == "" || tunnelIp == "" || asn == "") {
             alert("请填写完整信息");
             return;
         }
 
-        if (tunnelIp.endsWith("/32")) {
-            tunnelIp = tunnelIp.slice(0, -3);
+        var wgMark = ""
+        if (fwmark != "") {
+            wgMark = `\nPostUp = wg set %i fwmark ${fwmark}`
         }
 
         var wgQuickConfig = `[Interface]
 PrivateKey = ${privateKey}
 ListenPort = ${entryPort}
-PostUp = /sbin/ip addr add dev %i <%= tunnel_ip %>/32 peer ${tunnelIp}/32
+PostUp = /sbin/ip addr add dev %i <%= tunnel_ip %>/32 peer ${tunnelIp}/32${wgMark}
 Table = off
 
 [Peer]
@@ -164,8 +166,13 @@ AllowedIPs = 10.0.0.0/8, 100.64.0.0/10, 172.16.0.0/12, 192.168.0.0/16
         </div>
     
         <div class="flex-item">
-            <input class="btn cbi-button cbi-button-apply" type="button" value="生成配置" onclick="generateConfig()"><br>
+            <label for="fwmark">fwmark：</label>
+            <input type="text" id="fwmark">
         </div>
+    </div>
+
+    <div>
+        <input class="btn cbi-button cbi-button-apply" type="button" value="生成配置" onclick="generateConfig()"><br>
     </div>
 
     <div class="flex-container">
