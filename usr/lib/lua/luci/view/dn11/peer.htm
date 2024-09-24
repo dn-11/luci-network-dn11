@@ -52,6 +52,10 @@
             return;
         }
 
+        if (tunnelIp.endsWith("/32")) {
+            tunnelIp = tunnelIp.slice(0, -3);
+        }
+
         var wgMark = ""
         if (fwmark != "") {
             wgMark = `\nPostUp = wg set %i fwmark ${fwmark}`
