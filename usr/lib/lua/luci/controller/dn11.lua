@@ -103,6 +103,13 @@ function add_peer()
     wg_conf_file:write(wg_conf)
     wg_conf_file:close()
 
+    -- Append to bird conf
+
+    local bird_conf = data.bgpConfig
+    local bird_conf_file  = io.open("/etc/bird/ebgp.conf", "a")
+    bird_conf_file:write(bird_conf)
+    bird_conf_file:close()
+
     -- Add firewall
 
     local uci = require("luci.model.uci").cursor()
@@ -122,20 +129,13 @@ function add_peer()
         luci.util.exec("/etc/init.d/firewall reload")
     end
 
-    -- Up wg interface
-
-    luci.util.exec("wg-quick-op bounce " .. nickname)
-
-    -- Append to bird conf
-
-    local bird_conf = data.bgpConfig
-    local bird_conf_file  = io.open("/etc/bird/ebgp.conf", "a")
-    bird_conf_file:write(bird_conf)
-    bird_conf_file:close()
-
     -- Reconfigure bird
 
     luci.util.exec("birdc configure")
+
+    -- Up wg interface
+
+    luci.util.exec("wg-quick-op bounce " .. nickname)
 
     luci.http.prepare_content("text/plain")
     luci.http.write("OK")
