@@ -47,7 +47,8 @@
         var tunnelIp = document.getElementById("tunnelIp").value;
         var asn = document.getElementById("asn").value;
         var fwmark = document.getElementById("fwmark").value;
-        if (entryPort == "" || privateKey == "" || nickname == "" || publicKey == "" || endpoint == "" || tunnelIp == "" || asn == "") {
+        var mtu = document.getElementById("mtu").value;
+        if (entryPort == "" || privateKey == "" || nickname == "" || publicKey == "" || tunnelIp == "" || asn == "") {
             alert("请填写完整信息");
             return;
         }
@@ -61,14 +62,26 @@
             wgMark = `\nPostUp = wg set %i fwmark ${fwmark}`
         }
 
+        var wgMTU = ""
+        if (mtu != "") {
+            wgMTU = `\nMTU = ${mtu}`
+        }
+
+        var wgEndpoint = ""
+        if (endpoint != "") {
+            wgEndpoint = `Endpoint = ${endpoint}`
+        } else {
+            wgEndpoint = `#Endpoint = `
+        }
+
         var wgQuickConfig = `[Interface]
 PrivateKey = ${privateKey}
 ListenPort = ${entryPort}
 PostUp = /sbin/ip addr add dev %i <%= tunnel_ip %>/32 peer ${tunnelIp}/32${wgMark}
-Table = off
+Table = off${wgMTU}
 
 [Peer]
-Endpoint = ${endpoint}
+${wgEndpoint}
 PublicKey = ${publicKey}
 AllowedIPs = 10.0.0.0/8, 100.64.0.0/10, 172.16.0.0/12, 192.168.0.0/16
 `;
@@ -175,8 +188,15 @@ AllowedIPs = 10.0.0.0/8, 100.64.0.0/10, 172.16.0.0/12, 192.168.0.0/16
         </div>
     </div>
 
-    <div>
-        <input class="btn cbi-button cbi-button-apply" type="button" value="生成配置" onclick="generateConfig()"><br>
+    <div class="flex-container">
+        <div class="flex-item">
+            <label for="mtu">MTU：</label>
+            <input type="text" id="mtu">
+        </div>
+
+        <div class="flex-item">
+            <input class="btn cbi-button cbi-button-apply" type="button" value="生成配置" onclick="generateConfig()"><br>
+        </div>
     </div>
 
     <div class="flex-container">
