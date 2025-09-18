@@ -116,9 +116,12 @@ function add_peer()
     local zones = uci:get_all("firewall")
     local vpn_zone
     for name, zone in pairs(zones) do
-        if zone.name == 'vpn' then
-            vpn_zone = name
-            break
+        -- avoid other type of section be used incorrectly
+        if zone['.type'] == "zone" then
+            if zone.name == 'vpn' then
+                vpn_zone = name
+                break
+            end
         end
     end
     if vpn_zone then
